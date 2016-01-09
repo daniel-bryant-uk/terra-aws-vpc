@@ -28,6 +28,7 @@ resource "aws_subnet" "default" {
 }
 
 # A security group for the ELB so it is accessible via the web
+# TODO: better naming
 resource "aws_security_group" "elb" {
   name        = "terraform_example_elb"
   description = "Used in the terraform"
@@ -109,12 +110,12 @@ resource "aws_instance" "web" {
   # communicate with the resource (instance)
   connection {
     # The default username for our AMI
-    user = "ubuntu"
+    user = "ec2-user"
 
     # The connection will use the local SSH agent for authentication.
   }
 
-  instance_type = "m1.small"
+  instance_type = "t2.micro"
 
   # Lookup the correct AMI based on the region
   # we specified
@@ -132,13 +133,12 @@ resource "aws_instance" "web" {
   subnet_id = "${aws_subnet.default.id}"
 
   # We run a remote provisioner on the instance after creating it.
-  # In this case, we just install nginx and start it. By default,
-  # this should be on port 80
+  # Don't forget to run processes as daemons (or in the background)
+  # or else Terraform won't finish
   provisioner "remote-exec" {
     inline = [
-      "sudo apt-get -y update",
-      "sudo apt-get -y install nginx",
-      "sudo service nginx start"
+      "sudo yum -y update",
+      "sudo docker run -d -p 80:3000 danielbryantuk/gowebserver"
     ]
   }
 }
